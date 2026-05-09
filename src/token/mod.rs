@@ -1,6 +1,6 @@
-struct Token {
-    type_: String,
-    literal: String,
+pub struct Token {
+    pub type_: String,
+    pub literal: String,
 }
 
 const ILLEGAL: &str = "ILLEGAL";
