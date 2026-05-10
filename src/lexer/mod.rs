@@ -1,4 +1,17 @@
-use super::token;
+use super::token::ASSIGN;
+use super::token::COMMA;
+use super::token::EOF;
+use super::token::FUNCTION;
+use super::token::IDENT;
+use super::token::ILLEGAL;
+use super::token::INT;
+use super::token::LBRACE;
+use super::token::LET;
+use super::token::LPAREN;
+use super::token::PLUS;
+use super::token::RBRACE;
+use super::token::RPAREN;
+use super::token::SEMICOLON;
 use super::token::Token;
 
 struct Lexer {
@@ -10,7 +23,7 @@ struct Lexer {
 
 trait LexerTraits {
     fn read_char(&mut self);
-    fn next_token(&self) -> Token;
+    fn next_token(&mut self) -> Token;
 }
 
 fn new(input_str: String) -> Lexer {
@@ -42,20 +55,38 @@ impl LexerTraits for Lexer {
         self.read_pos = Some(new_read_pos);
     }
 
-    fn next_token(&self) -> Token {
-        let tok = Token {
-           type_: String::from(""),
-            literal: 
-        }
+    fn next_token(&mut self) -> Token {
+        #[allow(unused_assignments)]
+        let mut tok = Token::default();
+        let lit = self.ch.unwrap();
+        let c = char::from(lit);
 
-        match self.ch {}
+        match c {
+            '=' => tok = new_token(ASSIGN, lit),
+            ';' => tok = new_token(SEMICOLON, lit),
+            '(' => tok = new_token(LPAREN, lit),
+            ')' => tok = new_token(RPAREN, lit),
+            ',' => tok = new_token(COMMA, lit),
+            '+' => tok = new_token(PLUS, lit),
+            '{' => tok = new_token(LBRACE, lit),
+            '}' => tok = new_token(RBRACE, lit),
+            _ => {
+                tok = Token {
+                    type_: String::from(EOF),
+                    literal: String::from(""),
+                }
+            }
+        }
+        self.read_char();
+        tok
     }
 }
 
-fn new_token(token_type: String, ch: &u8) {
-        let lit = String::from_utf8_lossy(ch);
-        let token = Token {
-            type_: token_type,
-            literal: lit
-        };
+fn new_token(token_type: &str, ch: u8) -> Token {
+    let lit = ch.to_string();
+    let token_type = String::from(token_type);
+    Token {
+        type_: token_type,
+        literal: lit,
     }
+}
