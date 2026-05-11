@@ -14,19 +14,20 @@ use super::token::RPAREN;
 use super::token::SEMICOLON;
 use super::token::Token;
 
-struct Lexer {
+pub struct Lexer {
     input: String,
     position: Option<i32>,
     read_pos: Option<i32>,
     ch: Option<u8>,
 }
 
-trait LexerTraits {
+pub trait LexerTraits {
     fn read_char(&mut self);
     fn next_token(&mut self) -> Token;
+    fn read_identifier(&mut self) -> String;
 }
 
-fn new(input_str: String) -> Lexer {
+pub fn new(input_str: String) -> Lexer {
     let mut l: Lexer = Lexer {
         input: input_str,
         position: Some(0),
@@ -71,14 +72,28 @@ impl LexerTraits for Lexer {
             '{' => tok = new_token(LBRACE, lit),
             '}' => tok = new_token(RBRACE, lit),
             _ => {
-                tok = Token {
-                    type_: String::from(EOF),
-                    literal: String::from(""),
+                if c.is_alphabetic() {
+                    let _lit_ = self.read_identifier();
+                    return tok;
+                } else {
+                    tok = new_token(ILLEGAL, lit);
                 }
             }
         }
         self.read_char();
         tok
+    }
+
+    fn read_identifier(&mut self) -> String {
+        let position = self.position.unwrap();
+        while self.ch.unwrap().is_ascii_alphabetic() {
+            self.read_char();
+        }
+        let read_pos = self.position.unwrap() as usize;
+        let position = position as usize;
+        let res = &self.input;
+        let res = &res[position..read_pos];
+        String::from(res)
     }
 }
 
