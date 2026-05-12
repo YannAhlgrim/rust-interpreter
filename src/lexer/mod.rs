@@ -3,12 +3,9 @@ use crate::token::lookup_ident;
 use super::token::ASSIGN;
 use super::token::COMMA;
 use super::token::EOF;
-use super::token::FUNCTION;
-use super::token::IDENT;
 use super::token::ILLEGAL;
 use super::token::INT;
 use super::token::LBRACE;
-use super::token::LET;
 use super::token::LPAREN;
 use super::token::PLUS;
 use super::token::RBRACE;
@@ -34,8 +31,8 @@ pub trait LexerTraits {
 pub fn new(input_str: String) -> Lexer {
     let mut l: Lexer = Lexer {
         input: input_str,
-        position: Some(0),
-        read_pos: Some(1),
+        position: Some(-1),
+        read_pos: Some(0),
         ch: Some(0),
     };
     l.read_char();
@@ -68,6 +65,7 @@ impl LexerTraits for Lexer {
         let c = char::from(lit);
 
         match c {
+            '\0' => tok = new_token(EOF, lit),
             '=' => tok = new_token(ASSIGN, lit),
             ';' => tok = new_token(SEMICOLON, lit),
             '(' => tok = new_token(LPAREN, lit),
@@ -80,10 +78,10 @@ impl LexerTraits for Lexer {
                 if c.is_alphabetic() {
                     let lit = self.read_identifier();
                     let tok_type = lookup_ident(&lit);
-                    return new_token(tok_type, lit.as_bytes()[0]);
+                    return new_token_from_str(tok_type, lit);
                 } else if c.is_ascii_digit() {
                     let lit = self.read_number();
-                    return new_token(INT, lit.as_bytes()[0]);
+                    return new_token_from_str(INT, lit);
                 } else {
                     tok = new_token(ILLEGAL, lit);
                 }
@@ -129,6 +127,14 @@ impl LexerTraits for Lexer {
 
 fn new_token(token_type: &str, ch: u8) -> Token {
     let lit = String::from(char::from(ch));
+    let token_type = String::from(token_type);
+    Token {
+        type_: token_type,
+        literal: lit,
+    }
+}
+
+fn new_token_from_str(token_type: &str, lit: String) -> Token {
     let token_type = String::from(token_type);
     Token {
         type_: token_type,

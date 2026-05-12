@@ -21,10 +21,10 @@ pub const RBRACE: &str = "}";
 pub const FUNCTION: &str = "FUNCTION";
 pub const LET: &str = "LET";
 
-pub fn lookup_ident(ident: &str) -> &str {
+pub fn lookup_ident(ident: &str) -> &'static str {
     match ident {
         "fn" => FUNCTION,
         "let" => LET,
-        _ => ILLEGAL,
+        _ => IDENT,
     }
 }

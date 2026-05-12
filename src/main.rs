@@ -14,7 +14,7 @@ fn main() {
 
     let mut l = new(input.to_string());
 
-    for (i, tok) in (0..36).map(|_| l.next_token()).enumerate() {
+    for (_i, tok) in (0..37).map(|_| l.next_token()).enumerate() {
         println!("{}: {:?}", tok.type_, tok.literal);
     }
 }
