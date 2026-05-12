@@ -1,16 +1,24 @@
 use crate::token::lookup_ident;
 
 use super::token::ASSIGN;
+use super::token::ASTERISK;
+use super::token::BANG;
 use super::token::COMMA;
 use super::token::EOF;
+use super::token::EQ;
+use super::token::GT;
 use super::token::ILLEGAL;
 use super::token::INT;
 use super::token::LBRACE;
 use super::token::LPAREN;
+use super::token::LT;
+use super::token::MINUS;
+use super::token::NQ;
 use super::token::PLUS;
 use super::token::RBRACE;
 use super::token::RPAREN;
 use super::token::SEMICOLON;
+use super::token::SLASH;
 use super::token::Token;
 
 pub struct Lexer {
@@ -26,6 +34,7 @@ pub trait LexerTraits {
     fn read_identifier(&mut self) -> String;
     fn skip_whitespace(&mut self);
     fn read_number(&mut self) -> String;
+    fn peek_char(&self) -> u8;
 }
 
 pub fn new(input_str: String) -> Lexer {
@@ -66,12 +75,34 @@ impl LexerTraits for Lexer {
 
         match c {
             '\0' => tok = new_token(EOF, lit),
-            '=' => tok = new_token(ASSIGN, lit),
+            '=' => {
+                if char::from(self.peek_char()) == '=' {
+                    self.read_char();
+                    let lit = String::from("==");
+                    tok = new_token_from_str(EQ, lit);
+                } else {
+                    tok = new_token(ASSIGN, lit);
+                }
+            }
             ';' => tok = new_token(SEMICOLON, lit),
             '(' => tok = new_token(LPAREN, lit),
             ')' => tok = new_token(RPAREN, lit),
             ',' => tok = new_token(COMMA, lit),
             '+' => tok = new_token(PLUS, lit),
+            '-' => tok = new_token(MINUS, lit),
+            '!' => {
+                if char::from(self.peek_char()) == '=' {
+                    self.read_char();
+                    let lit = String::from("!=");
+                    tok = new_token_from_str(NQ, lit);
+                } else {
+                    tok = new_token(BANG, lit);
+                }
+            }
+            '/' => tok = new_token(SLASH, lit),
+            '*' => tok = new_token(ASTERISK, lit),
+            '<' => tok = new_token(LT, lit),
+            '>' => tok = new_token(GT, lit),
             '{' => tok = new_token(LBRACE, lit),
             '}' => tok = new_token(RBRACE, lit),
             _ => {
@@ -122,6 +153,16 @@ impl LexerTraits for Lexer {
         let res = &self.input;
         let res = &res[position..read_pos];
         String::from(res)
+    }
+
+    fn peek_char(&self) -> u8 {
+        let read_pos = self.read_pos.unwrap() as usize;
+        if read_pos >= self.input.len() {
+            0
+        } else {
+            let res = self.input.as_bytes();
+            res[read_pos]
+        }
     }
 }
 
