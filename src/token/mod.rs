@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Default)]
 pub struct Token {
     pub type_: String,
@@ -18,3 +20,11 @@ pub const LBRACE: &str = "{";
 pub const RBRACE: &str = "}";
 pub const FUNCTION: &str = "FUNCTION";
 pub const LET: &str = "LET";
+
+pub fn lookup_ident(ident: &str) -> &str {
+    match ident {
+        "fn" => FUNCTION,
+        "let" => LET,
+        _ => ILLEGAL,
+    }
+}

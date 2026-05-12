@@ -1,3 +1,5 @@
+use crate::token::lookup_ident;
+
 use super::token::ASSIGN;
 use super::token::COMMA;
 use super::token::EOF;
@@ -25,6 +27,8 @@ pub trait LexerTraits {
     fn read_char(&mut self);
     fn next_token(&mut self) -> Token;
     fn read_identifier(&mut self) -> String;
+    fn skip_whitespace(&mut self);
+    fn read_number(&mut self) -> String;
 }
 
 pub fn new(input_str: String) -> Lexer {
@@ -59,6 +63,7 @@ impl LexerTraits for Lexer {
     fn next_token(&mut self) -> Token {
         #[allow(unused_assignments)]
         let mut tok = Token::default();
+        self.skip_whitespace();
         let lit = self.ch.unwrap();
         let c = char::from(lit);
 
@@ -73,8 +78,12 @@ impl LexerTraits for Lexer {
             '}' => tok = new_token(RBRACE, lit),
             _ => {
                 if c.is_alphabetic() {
-                    let _lit_ = self.read_identifier();
-                    return tok;
+                    let lit = self.read_identifier();
+                    let tok_type = lookup_ident(&lit);
+                    return new_token(tok_type, lit.as_bytes()[0]);
+                } else if c.is_ascii_digit() {
+                    let lit = self.read_number();
+                    return new_token(INT, lit.as_bytes()[0]);
                 } else {
                     tok = new_token(ILLEGAL, lit);
                 }
@@ -95,10 +104,31 @@ impl LexerTraits for Lexer {
         let res = &res[position..read_pos];
         String::from(res)
     }
+
+    fn skip_whitespace(&mut self) {
+        while char::from(self.ch.unwrap()) == ' '
+            || char::from(self.ch.unwrap()) == '\n'
+            || char::from(self.ch.unwrap()) == '\r'
+        {
+            self.read_char();
+        }
+    }
+
+    fn read_number(&mut self) -> String {
+        let position = self.position.unwrap();
+        while self.ch.unwrap().is_ascii_digit() {
+            self.read_char();
+        }
+        let read_pos = self.position.unwrap() as usize;
+        let position = position as usize;
+        let res = &self.input;
+        let res = &res[position..read_pos];
+        String::from(res)
+    }
 }
 
 fn new_token(token_type: &str, ch: u8) -> Token {
-    let lit = ch.to_string();
+    let lit = String::from(char::from(ch));
     let token_type = String::from(token_type);
     Token {
         type_: token_type,
