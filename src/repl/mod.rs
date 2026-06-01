@@ -1,5 +1,7 @@
-use crate::lexer::LexerTraits;
 use crate::lexer::new;
+use crate::parser::Parser;
+use crate::parser::ParserTrait;
+use crate::parser::new_parser;
 
 const PROMPT: &str = ">> ";
 
@@ -15,13 +17,11 @@ pub fn start_repl() {
         if input == "exit" {
             break;
         }
-        let mut lexer = new(input.to_string());
-        loop {
-            let token = lexer.next_token();
-            if token.type_ == "EOF" {
-                break;
-            }
-            println!("Token: {:?}, Literal: {:?}", token.type_, token.literal);
+        let lexer = new(input.to_string());
+        let mut parser: Parser = new_parser(lexer);
+        let program = parser.parse_program();
+        for stmt in program.statements {
+            println!("{:?}", stmt.token_literal());
         }
     }
 }

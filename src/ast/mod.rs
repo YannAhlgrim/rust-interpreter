@@ -1,17 +1,17 @@
 use crate::token;
 
-trait NodeTrait {
+pub trait NodeTrait {
     fn token_literal(&self) -> String;
 }
 
-trait StatementTrait: NodeTrait {
+pub trait StatementTrait: NodeTrait {
     fn statement_node(&self);
 }
 
 trait ExpressionTrait: NodeTrait {
     fn expression_node(&self);
 }
-struct Expression {
+pub struct Expression {
     //
 }
 impl NodeTrait for Expression {
@@ -20,7 +20,7 @@ impl NodeTrait for Expression {
     }
 }
 
-struct Statement {
+pub struct Statement {
     //
 }
 impl NodeTrait for Statement {
@@ -34,12 +34,12 @@ impl StatementTrait for Statement {
 }
 
 pub struct Program {
-    statements: Vec<Statement>,
+    pub statements: Vec<Box<dyn StatementTrait>>,
 }
 
 impl NodeTrait for Program {
     fn token_literal(&self) -> String {
-        if self.statements.is_empty() {
+        if !self.statements.is_empty() {
             self.statements[0].token_literal()
         } else {
             String::new()
@@ -47,10 +47,10 @@ impl NodeTrait for Program {
     }
 }
 
-struct LetStatement {
-    token: token::Token,
-    name: Identifier,
-    value: Expression,
+pub struct LetStatement {
+    pub token: token::Token,
+    pub name: Identifier,
+    pub value: Expression,
 }
 
 impl NodeTrait for LetStatement {
@@ -65,9 +65,9 @@ impl StatementTrait for LetStatement {
     }
 }
 
-struct Identifier {
-    token: token::Token,
-    value: String,
+pub struct Identifier {
+    pub token: token::Token,
+    pub value: String,
 }
 
 impl NodeTrait for Identifier {
