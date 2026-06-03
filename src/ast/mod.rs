@@ -5,6 +5,7 @@ pub trait NodeTrait {
     fn string(&self) -> String;
 }
 
+#[allow(dead_code)]
 pub trait StatementTrait: NodeTrait {
     fn statement_node(&self);
 }
@@ -15,7 +16,6 @@ pub enum Expression {
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
     Boolean(Boolean),
-    BlockStatement(BlockStatement),
     IfExpression(IfExpression),
     FunctionLiteral(FunctionLiteral),
     CallExpression(CallExpression),
@@ -29,7 +29,6 @@ impl NodeTrait for Expression {
             Expression::PrefixExpression(i) => i.token_literal(),
             Expression::InfixExpression(i) => i.token_literal(),
             Expression::Boolean(i) => i.token_literal(),
-            Expression::BlockStatement(i) => i.token_literal(),
             Expression::IfExpression(i) => i.token_literal(),
             Expression::FunctionLiteral(i) => i.token_literal(),
             Expression::CallExpression(i) => i.token_literal(),
@@ -43,27 +42,11 @@ impl NodeTrait for Expression {
             Expression::PrefixExpression(i) => i.string(),
             Expression::InfixExpression(i) => i.string(),
             Expression::Boolean(i) => i.string(),
-            Expression::BlockStatement(i) => i.string(),
             Expression::IfExpression(i) => i.string(),
             Expression::FunctionLiteral(i) => i.string(),
             Expression::CallExpression(i) => i.string(),
         }
     }
-}
-
-pub struct Statement;
-impl NodeTrait for Statement {
-    fn token_literal(&self) -> String {
-        todo!()
-    }
-
-    fn string(&self) -> String {
-        todo!()
-    }
-}
-
-impl StatementTrait for Statement {
-    fn statement_node(&self) {}
 }
 
 pub struct Program {
@@ -186,7 +169,7 @@ impl NodeTrait for IntegerLiteral {
     }
 
     fn string(&self) -> String {
-        self.token.literal.clone()
+        self.value.to_string()
     }
 }
 
@@ -245,7 +228,7 @@ impl NodeTrait for Boolean {
     }
 
     fn string(&self) -> String {
-        self.token.literal.clone()
+        self.value.to_string()
     }
 }
 

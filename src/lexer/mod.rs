@@ -47,46 +47,40 @@ impl LexerTraits for Lexer {
     }
 
     fn next_token(&mut self) -> Token {
-        let mut tok = Token {
-            type_: TokenType::Illegal,
-            literal: String::new(),
-        };
         self.skip_whitespace();
         let lit = self.ch.unwrap();
         let c = char::from(lit);
 
-        match c {
-            '\0' => tok = new_token(TokenType::Eof, lit),
+        let tok = match c {
+            '\0' => new_token(TokenType::Eof, lit),
             '=' => {
                 if char::from(self.peek_char()) == '=' {
                     self.read_char();
-                    let lit = String::from("==");
-                    tok = new_token_from_str(TokenType::Eq, lit);
+                    new_token_from_str(TokenType::Eq, String::from("=="))
                 } else {
-                    tok = new_token(TokenType::Assign, lit);
+                    new_token(TokenType::Assign, lit)
                 }
             }
-            ';' => tok = new_token(TokenType::Semicolon, lit),
-            '(' => tok = new_token(TokenType::Lparen, lit),
-            ')' => tok = new_token(TokenType::Rparen, lit),
-            ',' => tok = new_token(TokenType::Comma, lit),
-            '+' => tok = new_token(TokenType::Plus, lit),
-            '-' => tok = new_token(TokenType::Minus, lit),
+            ';' => new_token(TokenType::Semicolon, lit),
+            '(' => new_token(TokenType::Lparen, lit),
+            ')' => new_token(TokenType::Rparen, lit),
+            ',' => new_token(TokenType::Comma, lit),
+            '+' => new_token(TokenType::Plus, lit),
+            '-' => new_token(TokenType::Minus, lit),
             '!' => {
                 if char::from(self.peek_char()) == '=' {
                     self.read_char();
-                    let lit = String::from("!=");
-                    tok = new_token_from_str(TokenType::Neq, lit);
+                    new_token_from_str(TokenType::Neq, String::from("!="))
                 } else {
-                    tok = new_token(TokenType::Bang, lit);
+                    new_token(TokenType::Bang, lit)
                 }
             }
-            '/' => tok = new_token(TokenType::Slash, lit),
-            '*' => tok = new_token(TokenType::Asterisk, lit),
-            '<' => tok = new_token(TokenType::Lt, lit),
-            '>' => tok = new_token(TokenType::Gt, lit),
-            '{' => tok = new_token(TokenType::Lbrace, lit),
-            '}' => tok = new_token(TokenType::Rbrace, lit),
+            '/' => new_token(TokenType::Slash, lit),
+            '*' => new_token(TokenType::Asterisk, lit),
+            '<' => new_token(TokenType::Lt, lit),
+            '>' => new_token(TokenType::Gt, lit),
+            '{' => new_token(TokenType::Lbrace, lit),
+            '}' => new_token(TokenType::Rbrace, lit),
             _ => {
                 if c.is_alphabetic() {
                     let lit = self.read_identifier();
@@ -96,10 +90,10 @@ impl LexerTraits for Lexer {
                     let lit = self.read_number();
                     return new_token_from_str(TokenType::Int, lit);
                 } else {
-                    tok = new_token(TokenType::Illegal, lit);
+                    new_token(TokenType::Illegal, lit)
                 }
             }
-        }
+        };
         self.read_char();
         tok
     }
