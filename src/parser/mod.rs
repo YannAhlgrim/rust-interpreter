@@ -117,7 +117,7 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    fn parse_program(&mut self) -> ast::Program {
+    pub fn parse_program(&mut self) -> ast::Program {
         let mut program = ast::Program {
             statements: Vec::new(),
         };
@@ -151,6 +151,7 @@ impl Parser {
             self.next_token();
             true
         } else {
+            self.peek_error(t);
             false
         }
     }
@@ -439,7 +440,7 @@ impl Parser {
         Some(args)
     }
 
-    fn errors(&self) -> &Vec<String> {
+    pub fn errors(&self) -> &Vec<String> {
         &self.errors
     }
 

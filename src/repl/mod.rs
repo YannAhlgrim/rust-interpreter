@@ -1,7 +1,6 @@
 use crate::ast::NodeTrait;
 use crate::lexer::new;
 use crate::parser::Parser;
-use crate::parser::ParserTrait;
 use crate::parser::new_parser;
 
 const PROMPT: &str = ">> ";
@@ -21,6 +20,11 @@ pub fn start_repl() {
         let lexer = new(input.to_string());
         let mut parser: Parser = new_parser(lexer);
         let program = parser.parse_program();
+
+        for err in parser.errors() {
+            eprintln!("ERROR: {}", err);
+        }
+
         println!("{}", program.string());
     }
 }
