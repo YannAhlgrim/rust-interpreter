@@ -1,46 +1,86 @@
-#[derive(Default)]
+use std::fmt;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum TokenType {
+    #[default]
+    Illegal,
+    Eof,
+    Ident,
+    Int,
+    Assign,
+    Plus,
+    Minus,
+    Bang,
+    Asterisk,
+    Slash,
+    Lt,
+    Gt,
+    Comma,
+    Semicolon,
+    Lparen,
+    Rparen,
+    Lbrace,
+    Rbrace,
+    Function,
+    Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
+    Eq,
+    Neq,
+}
+
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TokenType::Illegal => write!(f, "ILLEGAL"),
+            TokenType::Eof => write!(f, "EOF"),
+            TokenType::Ident => write!(f, "IDENT"),
+            TokenType::Int => write!(f, "INT"),
+            TokenType::Assign => write!(f, "="),
+            TokenType::Plus => write!(f, "+"),
+            TokenType::Minus => write!(f, "-"),
+            TokenType::Bang => write!(f, "!"),
+            TokenType::Asterisk => write!(f, "*"),
+            TokenType::Slash => write!(f, "/"),
+            TokenType::Lt => write!(f, "<"),
+            TokenType::Gt => write!(f, ">"),
+            TokenType::Comma => write!(f, ","),
+            TokenType::Semicolon => write!(f, ";"),
+            TokenType::Lparen => write!(f, "("),
+            TokenType::Rparen => write!(f, ")"),
+            TokenType::Lbrace => write!(f, "{{"),
+            TokenType::Rbrace => write!(f, "}}"),
+            TokenType::Function => write!(f, "FUNCTION"),
+            TokenType::Let => write!(f, "LET"),
+            TokenType::True => write!(f, "TRUE"),
+            TokenType::False => write!(f, "FALSE"),
+            TokenType::If => write!(f, "IF"),
+            TokenType::Else => write!(f, "ELSE"),
+            TokenType::Return => write!(f, "RETURN"),
+            TokenType::Eq => write!(f, "=="),
+            TokenType::Neq => write!(f, "!="),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Token {
-    pub type_: String,
+    pub type_: TokenType,
     pub literal: String,
 }
 
-pub const ILLEGAL: &str = "ILLEGAL";
-pub const EOF: &str = "EOF";
-pub const IDENT: &str = "IDENT";
-pub const INT: &str = "INT";
-pub const ASSIGN: &str = "=";
-pub const PLUS: &str = "+";
-pub const MINUS: &str = "-";
-pub const BANG: &str = "!";
-pub const ASTERISK: &str = "*";
-pub const SLASH: &str = "/";
-pub const LT: &str = "<";
-pub const GT: &str = ">";
-pub const COMMA: &str = ",";
-pub const SEMICOLON: &str = ";";
-pub const LPAREN: &str = "(";
-pub const RPAREN: &str = ")";
-pub const LBRACE: &str = "{";
-pub const RBRACE: &str = "}";
-pub const FUNCTION: &str = "FUNCTION";
-pub const LET: &str = "LET";
-pub const TRUE: &str = "TRUE";
-pub const FALSE: &str = "FALSE";
-pub const IF: &str = "IF";
-pub const ELSE: &str = "ELSE";
-pub const RETURN: &str = "RETURN";
-pub const EQ: &str = "EQ";
-pub const NQ: &str = "NQ";
-
-pub fn lookup_ident(ident: &str) -> &'static str {
+pub fn lookup_ident(ident: &str) -> TokenType {
     match ident {
-        "fn" => FUNCTION,
-        "let" => LET,
-        "true" => TRUE,
-        "false" => FALSE,
-        "if" => IF,
-        "else" => ELSE,
-        "return" => RETURN,
-        _ => IDENT,
+        "fn" => TokenType::Function,
+        "let" => TokenType::Let,
+        "true" => TokenType::True,
+        "false" => TokenType::False,
+        "if" => TokenType::If,
+        "else" => TokenType::Else,
+        "return" => TokenType::Return,
+        _ => TokenType::Ident,
     }
 }

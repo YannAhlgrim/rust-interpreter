@@ -1,25 +1,5 @@
 use crate::token::lookup_ident;
-
-use super::token::ASSIGN;
-use super::token::ASTERISK;
-use super::token::BANG;
-use super::token::COMMA;
-use super::token::EOF;
-use super::token::EQ;
-use super::token::GT;
-use super::token::ILLEGAL;
-use super::token::INT;
-use super::token::LBRACE;
-use super::token::LPAREN;
-use super::token::LT;
-use super::token::MINUS;
-use super::token::NQ;
-use super::token::PLUS;
-use super::token::RBRACE;
-use super::token::RPAREN;
-use super::token::SEMICOLON;
-use super::token::SLASH;
-use super::token::Token;
+use crate::token::{Token, TokenType};
 
 pub struct Lexer {
     input: String,
@@ -67,44 +47,46 @@ impl LexerTraits for Lexer {
     }
 
     fn next_token(&mut self) -> Token {
-        #[allow(unused_assignments)]
-        let mut tok = Token::default();
+        let mut tok = Token {
+            type_: TokenType::Illegal,
+            literal: String::new(),
+        };
         self.skip_whitespace();
         let lit = self.ch.unwrap();
         let c = char::from(lit);
 
         match c {
-            '\0' => tok = new_token(EOF, lit),
+            '\0' => tok = new_token(TokenType::Eof, lit),
             '=' => {
                 if char::from(self.peek_char()) == '=' {
                     self.read_char();
                     let lit = String::from("==");
-                    tok = new_token_from_str(EQ, lit);
+                    tok = new_token_from_str(TokenType::Eq, lit);
                 } else {
-                    tok = new_token(ASSIGN, lit);
+                    tok = new_token(TokenType::Assign, lit);
                 }
             }
-            ';' => tok = new_token(SEMICOLON, lit),
-            '(' => tok = new_token(LPAREN, lit),
-            ')' => tok = new_token(RPAREN, lit),
-            ',' => tok = new_token(COMMA, lit),
-            '+' => tok = new_token(PLUS, lit),
-            '-' => tok = new_token(MINUS, lit),
+            ';' => tok = new_token(TokenType::Semicolon, lit),
+            '(' => tok = new_token(TokenType::Lparen, lit),
+            ')' => tok = new_token(TokenType::Rparen, lit),
+            ',' => tok = new_token(TokenType::Comma, lit),
+            '+' => tok = new_token(TokenType::Plus, lit),
+            '-' => tok = new_token(TokenType::Minus, lit),
             '!' => {
                 if char::from(self.peek_char()) == '=' {
                     self.read_char();
                     let lit = String::from("!=");
-                    tok = new_token_from_str(NQ, lit);
+                    tok = new_token_from_str(TokenType::Neq, lit);
                 } else {
-                    tok = new_token(BANG, lit);
+                    tok = new_token(TokenType::Bang, lit);
                 }
             }
-            '/' => tok = new_token(SLASH, lit),
-            '*' => tok = new_token(ASTERISK, lit),
-            '<' => tok = new_token(LT, lit),
-            '>' => tok = new_token(GT, lit),
-            '{' => tok = new_token(LBRACE, lit),
-            '}' => tok = new_token(RBRACE, lit),
+            '/' => tok = new_token(TokenType::Slash, lit),
+            '*' => tok = new_token(TokenType::Asterisk, lit),
+            '<' => tok = new_token(TokenType::Lt, lit),
+            '>' => tok = new_token(TokenType::Gt, lit),
+            '{' => tok = new_token(TokenType::Lbrace, lit),
+            '}' => tok = new_token(TokenType::Rbrace, lit),
             _ => {
                 if c.is_alphabetic() {
                     let lit = self.read_identifier();
@@ -112,9 +94,9 @@ impl LexerTraits for Lexer {
                     return new_token_from_str(tok_type, lit);
                 } else if c.is_ascii_digit() {
                     let lit = self.read_number();
-                    return new_token_from_str(INT, lit);
+                    return new_token_from_str(TokenType::Int, lit);
                 } else {
-                    tok = new_token(ILLEGAL, lit);
+                    tok = new_token(TokenType::Illegal, lit);
                 }
             }
         }
@@ -166,17 +148,15 @@ impl LexerTraits for Lexer {
     }
 }
 
-fn new_token(token_type: &str, ch: u8) -> Token {
+fn new_token(token_type: TokenType, ch: u8) -> Token {
     let lit = String::from(char::from(ch));
-    let token_type = String::from(token_type);
     Token {
         type_: token_type,
         literal: lit,
     }
 }
 
-fn new_token_from_str(token_type: &str, lit: String) -> Token {
-    let token_type = String::from(token_type);
+fn new_token_from_str(token_type: TokenType, lit: String) -> Token {
     Token {
         type_: token_type,
         literal: lit,

@@ -1,3 +1,4 @@
+use crate::ast::NodeTrait;
 use crate::lexer::new;
 use crate::parser::Parser;
 use crate::parser::ParserTrait;
@@ -20,8 +21,6 @@ pub fn start_repl() {
         let lexer = new(input.to_string());
         let mut parser: Parser = new_parser(lexer);
         let program = parser.parse_program();
-        for stmt in program.statements {
-            println!("{:?}", stmt.token_literal());
-        }
+        println!("{}", program.string());
     }
 }
