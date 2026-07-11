@@ -3,6 +3,7 @@ use crate::token::Token;
 pub trait NodeTrait {
     fn token_literal(&self) -> String;
     fn string(&self) -> String;
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 #[allow(dead_code)]
@@ -47,6 +48,10 @@ impl NodeTrait for Expression {
             Expression::CallExpression(i) => i.string(),
         }
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 pub struct Program {
@@ -68,6 +73,10 @@ impl NodeTrait for Program {
             out.push_str(&stmt.string());
         }
         out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -102,6 +111,10 @@ impl NodeTrait for LetStatement {
         out.push_str(";");
         out
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl StatementTrait for LetStatement {
@@ -121,6 +134,10 @@ impl NodeTrait for ReturnStatement {
         out.push_str(";");
         out
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl StatementTrait for ReturnStatement {
@@ -134,6 +151,10 @@ impl NodeTrait for ExpressionStatement {
 
     fn string(&self) -> String {
         self.expression.string()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -155,6 +176,10 @@ impl NodeTrait for Identifier {
     fn string(&self) -> String {
         self.value.clone()
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 #[derive(Debug)]
@@ -170,6 +195,10 @@ impl NodeTrait for IntegerLiteral {
 
     fn string(&self) -> String {
         self.value.to_string()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -189,6 +218,10 @@ impl NodeTrait for PrefixExpression {
         out.push_str(&self.operator);
         out.push_str(&self.right.string());
         out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -215,6 +248,10 @@ impl NodeTrait for InfixExpression {
         out.push_str(")");
         out
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 pub struct Boolean {
@@ -229,6 +266,10 @@ impl NodeTrait for Boolean {
 
     fn string(&self) -> String {
         self.value.to_string()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -256,6 +297,10 @@ impl NodeTrait for IfExpression {
         }
         out
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 pub struct BlockStatement {
@@ -274,6 +319,10 @@ impl NodeTrait for BlockStatement {
             out.push_str(&stmt.string());
         }
         out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -298,6 +347,10 @@ impl NodeTrait for FunctionLiteral {
         out.push_str(&self.body.string());
         out
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 pub struct CallExpression {
@@ -319,5 +372,9 @@ impl NodeTrait for CallExpression {
         out.push_str(&args.join(", "));
         out.push_str(")");
         out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

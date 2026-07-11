@@ -1,4 +1,4 @@
-use crate::ast::NodeTrait;
+use crate::evaluator;
 use crate::lexer::new;
 use crate::parser::Parser;
 use crate::parser::new_parser;
@@ -20,11 +20,13 @@ pub fn start_repl() {
         let lexer = new(input.to_string());
         let mut parser: Parser = new_parser(lexer);
         let program = parser.parse_program();
+        let evaluated = evaluator::eval_program(program);
 
         for err in parser.errors() {
             eprintln!("ERROR: {}", err);
         }
-
-        println!("{}", program.string());
+        if !evaluated.is_none() {
+            println!("{}", evaluated.unwrap().inspect());
+        }
     }
 }
