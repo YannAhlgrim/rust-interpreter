@@ -239,7 +239,7 @@ impl Parser {
                 literal: String::from(&self.cur_token.literal),
                 type_: self.cur_token.type_,
             },
-            expression: self.parse_expression(Precedence::Lowest).unwrap(),
+            expression: self.parse_expression(Precedence::Lowest)?,
         };
 
         if self.peek_token_is(TokenType::Semicolon) {

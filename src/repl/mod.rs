@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::evaluator;
 use crate::lexer::new;
-use crate::object::Environment;
+use crate::object::{Environment, ObjectType};
 use crate::parser::Parser;
 use crate::parser::new_parser;
 
@@ -30,8 +30,10 @@ pub fn start_repl() {
         for err in parser.errors() {
             eprintln!("ERROR: {}", err);
         }
-        if !evaluated.is_none() {
-            println!("{}", evaluated.unwrap().inspect());
+        if let Some(obj) = evaluated {
+            if obj.object_type() != ObjectType::NULL {
+                println!("{}", obj.inspect());
+            }
         }
     }
 }
