@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::token::Token;
 
 pub trait NodeTrait {
@@ -162,7 +164,7 @@ impl StatementTrait for ExpressionStatement {
     fn statement_node(&self) {}
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -329,7 +331,7 @@ impl NodeTrait for BlockStatement {
 pub struct FunctionLiteral {
     pub token: Token,
     pub parameters: Vec<Identifier>,
-    pub body: BlockStatement,
+    pub body: Rc<BlockStatement>,
 }
 
 impl NodeTrait for FunctionLiteral {

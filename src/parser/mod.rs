@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     ast::{self},
     lexer::{self, LexerTraits},
@@ -378,7 +380,7 @@ impl Parser {
         if !self.expect_peek(TokenType::Lbrace) {
             return None;
         }
-        let body = self.parse_block_statement()?;
+        let body = Rc::new(self.parse_block_statement()?);
         Some(ast::Expression::FunctionLiteral(ast::FunctionLiteral {
             token,
             parameters,
