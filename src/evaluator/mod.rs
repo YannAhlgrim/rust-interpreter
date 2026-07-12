@@ -1,8 +1,9 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::ast::{self, NodeTrait};
-use crate::object::{self, Environment, Null, Object, ObjectType};
+use crate::object::{self, Environment, Hashable, Null, Object, ObjectType};
 
 const NULL: Null = Null;
 const BOOL_TRUE: object::Boolean = object::Boolean { value: true };
@@ -85,6 +86,9 @@ fn eval_expression(
         ast::Expression::IntegerLiteral(int) => {
             Some(Box::new(object::Integer { value: int.value }))
         }
+        ast::Expression::StringLiteral(s) => Some(Box::new(object::StringObj {
+            value: s.value.clone(),
+        })),
         ast::Expression::Boolean(b) => Some(Box::new(native_bool_to_bool_object(b.value))),
         ast::Expression::PrefixExpression(expr) => {
             let right = eval_expression(expr.right.as_ref(), Rc::clone(&env))?;
@@ -120,6 +124,25 @@ fn eval_expression(
                 return Some(args.into_iter().next().unwrap());
             }
             apply_function(function, args)
+        }
+        ast::Expression::ArrayLiteral(arr) => {
+            let elements = eval_expressions(&arr.elements, Rc::clone(&env))?;
+            if elements.len() == 1 && is_error(elements[0].as_ref()) {
+                return Some(elements.into_iter().next().unwrap());
+            }
+            Some(Box::new(object::Array { elements }))
+        }
+        ast::Expression::HashLiteral(hash) => eval_hash_literal(hash, env),
+        ast::Expression::IndexExpression(idx) => {
+            let left = eval_expression(idx.left.as_ref(), Rc::clone(&env))?;
+            if is_error(left.as_ref()) {
+                return Some(left);
+            }
+            let index = eval_expression(idx.index.as_ref(), Rc::clone(&env))?;
+            if is_error(index.as_ref()) {
+                return Some(index);
+            }
+            Some(eval_index_expression(left, index))
         }
     }
 }
@@ -166,6 +189,10 @@ fn apply_function(
             return Some(obj);
         }
         return Some(Box::new(NULL));
+    }
+
+    if let Some(builtin) = function.as_any().downcast_ref::<object::Builtin>() {
+        return Some((builtin.func)(args));
     }
 
     Some(new_error(format!(
@@ -237,6 +264,10 @@ fn eval_infix_expression(
         return eval_boolean_infix_expression(operator, left, right);
     }
 
+    if left.object_type() == ObjectType::STRING && right.object_type() == ObjectType::STRING {
+        return eval_string_infix_expression(operator, left, right);
+    }
+
     if left.object_type() != right.object_type() {
         return Some(new_error(format!(
             "type mismatch: {:?} {} {:?}",
@@ -292,6 +323,37 @@ fn eval_integer_infix_expression(
     }
 }
 
+fn eval_string_infix_expression(
+    operator: &str,
+    left: Box<dyn Object>,
+    right: Box<dyn Object>,
+) -> Option<Box<dyn Object>> {
+    let left_val = left
+        .as_any()
+        .downcast_ref::<object::StringObj>()
+        .unwrap()
+        .value
+        .clone();
+    let right_val = right
+        .as_any()
+        .downcast_ref::<object::StringObj>()
+        .unwrap()
+        .value
+        .clone();
+
+    match operator {
+        "+" => Some(Box::new(object::StringObj {
+            value: format!("{}{}", left_val, right_val),
+        })),
+        _ => Some(new_error(format!(
+            "unknown operator: {:?} {} {:?}",
+            left.object_type(),
+            operator,
+            right.object_type()
+        ))),
+    }
+}
+
 fn eval_boolean_infix_expression(
     operator: &str,
     left: Box<dyn Object>,
@@ -314,6 +376,128 @@ fn eval_boolean_infix_expression(
             right.object_type()
         ))),
     }
+}
+
+fn eval_hash_literal(
+    hash: &ast::HashLiteral,
+    env: Rc<RefCell<Environment>>,
+) -> Option<Box<dyn Object>> {
+    let mut pairs = HashMap::new();
+
+    for (k, v) in &hash.pairs {
+        let key = eval_expression(k, Rc::clone(&env))?;
+        if is_error(key.as_ref()) {
+            return Some(key);
+        }
+        let value = eval_expression(v, Rc::clone(&env))?;
+        if is_error(value.as_ref()) {
+            return Some(value);
+        }
+
+        let hash_key = match key.object_type() {
+            ObjectType::INTEGER => {
+                key.as_any()
+                    .downcast_ref::<object::Integer>()
+                    .unwrap()
+                    .hash_key()
+            }
+            ObjectType::BOOLEAN => {
+                key.as_any()
+                    .downcast_ref::<object::Boolean>()
+                    .unwrap()
+                    .hash_key()
+            }
+            ObjectType::STRING => {
+                key.as_any()
+                    .downcast_ref::<object::StringObj>()
+                    .unwrap()
+                    .hash_key()
+            }
+            _ => return Some(new_error(format!("unusable as hash key: {:?}", key.object_type()))),
+        };
+
+        pairs.insert(
+            hash_key,
+            object::HashPair {
+                key: key.clone_box(),
+                value: value.clone_box(),
+            },
+        );
+    }
+
+    Some(Box::new(object::Hash { pairs }))
+}
+
+fn eval_index_expression(left: Box<dyn Object>, index: Box<dyn Object>) -> Box<dyn Object> {
+    match (left.object_type(), index.object_type()) {
+        (ObjectType::ARRAY, ObjectType::INTEGER) => eval_array_index_expression(left, index),
+        (ObjectType::HASH, _) => eval_hash_index_expression(left, index),
+        (ObjectType::STRING, ObjectType::INTEGER) => eval_string_index_expression(left, index),
+        _ => new_error(format!(
+            "index operator not supported: {:?}[{:?}]",
+            left.object_type(),
+            index.object_type()
+        )),
+    }
+}
+
+fn eval_array_index_expression(
+    array: Box<dyn Object>,
+    index: Box<dyn Object>,
+) -> Box<dyn Object> {
+    let arr = array.as_any().downcast_ref::<object::Array>().unwrap();
+    let idx = index.as_any().downcast_ref::<object::Integer>().unwrap().value;
+    let max = arr.elements.len() as i64 - 1;
+    if idx < 0 || idx > max {
+        return Box::new(NULL);
+    }
+    arr.elements[idx as usize].clone_box()
+}
+
+fn eval_hash_index_expression(
+    hash: Box<dyn Object>,
+    index: Box<dyn Object>,
+) -> Box<dyn Object> {
+    let hash_obj = hash.as_any().downcast_ref::<object::Hash>().unwrap();
+
+    let key = match index.object_type() {
+        ObjectType::INTEGER => index
+            .as_any()
+            .downcast_ref::<object::Integer>()
+            .unwrap()
+            .hash_key(),
+        ObjectType::BOOLEAN => index
+            .as_any()
+            .downcast_ref::<object::Boolean>()
+            .unwrap()
+            .hash_key(),
+        ObjectType::STRING => index
+            .as_any()
+            .downcast_ref::<object::StringObj>()
+            .unwrap()
+            .hash_key(),
+        _ => return new_error(format!("unusable as hash key: {:?}", index.object_type())),
+    };
+
+    match hash_obj.pairs.get(&key) {
+        Some(pair) => pair.value.clone_box(),
+        None => Box::new(NULL),
+    }
+}
+
+fn eval_string_index_expression(
+    string: Box<dyn Object>,
+    index: Box<dyn Object>,
+) -> Box<dyn Object> {
+    let s = string.as_any().downcast_ref::<object::StringObj>().unwrap();
+    let idx = index.as_any().downcast_ref::<object::Integer>().unwrap().value;
+    let max = s.value.len() as i64 - 1;
+    if idx < 0 || idx > max {
+        return Box::new(NULL);
+    }
+    Box::new(object::StringObj {
+        value: s.value.chars().nth(idx as usize).unwrap().to_string(),
+    })
 }
 
 fn eval_if_expression(

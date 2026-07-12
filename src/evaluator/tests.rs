@@ -30,6 +30,12 @@ fn test_null_object(obj: &dyn Object) {
     assert_eq!(obj.object_type(), ObjectType::NULL);
 }
 
+fn test_string_object(obj: &dyn Object, expected: &str) {
+    assert_eq!(obj.object_type(), ObjectType::STRING);
+    let s = obj.as_any().downcast_ref::<object::StringObj>().unwrap();
+    assert_eq!(s.value, expected);
+}
+
 #[test]
 fn test_eval_integer_expression() {
     let tests = vec![("5", 5), ("10", 10), ("-5", -5), ("-10", -10)];
@@ -219,6 +225,8 @@ fn test_error_handling() {
         ("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"),
         ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
         ("foobar", "identifier not found: foobar"),
+        ("len(1)", "argument to `len` not supported"),
+        ("first(1)", "argument to `first` must be ARRAY"),
     ];
 
     for (input, expected) in tests {
@@ -227,4 +235,128 @@ fn test_error_handling() {
         let err = evaluated.as_any().downcast_ref::<object::Error>().unwrap();
         assert!(err.message.contains(expected), "expected '{}' to contain '{}'", err.message, expected);
     }
+}
+
+#[test]
+fn test_eval_string_expression() {
+    let input = "\"Hello World\"";
+    let evaluated = test_eval(input).unwrap();
+    test_string_object(evaluated.as_ref(), "Hello World");
+}
+
+#[test]
+fn test_string_concatenation() {
+    let input = "\"Hello\" + \" \" + \"World!\"";
+    let evaluated = test_eval(input).unwrap();
+    test_string_object(evaluated.as_ref(), "Hello World!");
+}
+
+#[test]
+fn test_string_indexing() {
+    let tests = vec![
+        ("\"abc\"[0]", "a"),
+        ("\"abc\"[1]", "b"),
+        ("\"abc\"[2]", "c"),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input).unwrap();
+        test_string_object(evaluated.as_ref(), expected);
+    }
+}
+
+#[test]
+fn test_eval_array_expression() {
+    let input = "[1, 2 * 2, 3 + 3]";
+    let evaluated = test_eval(input).unwrap();
+    assert_eq!(evaluated.object_type(), ObjectType::ARRAY);
+    let arr = evaluated.as_any().downcast_ref::<object::Array>().unwrap();
+    assert_eq!(arr.elements.len(), 3);
+    test_integer_object(arr.elements[0].as_ref(), 1);
+    test_integer_object(arr.elements[1].as_ref(), 4);
+    test_integer_object(arr.elements[2].as_ref(), 6);
+}
+
+#[test]
+fn test_eval_array_index() {
+    let tests = vec![
+        ("[1, 2, 3][0]", 1),
+        ("[1, 2, 3][1]", 2),
+        ("[1, 2, 3][2]", 3),
+        ("let i = 0; [1][i];", 1),
+        ("[1, 2, 3][1 + 1];", 3),
+        ("let myArray = [1, 2, 3]; myArray[2];", 3),
+        ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+        ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i];", 2),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input).unwrap();
+        test_integer_object(evaluated.as_ref(), expected);
+    }
+}
+
+#[test]
+fn test_eval_hash_expression() {
+    let input = r#"{"one": 1, "two": 2, "three": 3}"#;
+    let evaluated = test_eval(input).unwrap();
+    assert_eq!(evaluated.object_type(), ObjectType::HASH);
+    let hash = evaluated.as_any().downcast_ref::<object::Hash>().unwrap();
+    assert_eq!(hash.pairs.len(), 3);
+}
+
+#[test]
+fn test_eval_hash_index() {
+    let tests = vec![
+        (r#"{"foo": 5}["foo"]"#, 5),
+        (r#"{"foo": 5}["bar"]"#, 0), // expect null, we'll check separately
+        (r#"let key = "foo"; {"foo": 5}[key]"#, 5),
+        ("{true: 1}[true]", 1),
+        ("{1: 1, 2: 2}[2]", 2),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input).unwrap();
+        if input.contains("\"bar\"") {
+            test_null_object(evaluated.as_ref());
+        } else {
+            test_integer_object(evaluated.as_ref(), expected);
+        }
+    }
+}
+
+#[test]
+fn test_builtin_functions() {
+    let tests = vec![
+        ("len(\"\")", 0),
+        ("len(\"four\")", 4),
+        ("len(\"hello world\")", 11),
+        ("len([1, 2, 3])", 3),
+        ("len([])", 0),
+        ("first([1, 2, 3])", 1),
+        ("last([1, 2, 3])", 3),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input).unwrap();
+        test_integer_object(evaluated.as_ref(), expected);
+    }
+}
+
+#[test]
+fn test_builtin_array_functions() {
+    let input = "let a = [1, 2, 3]; push(a, 4);";
+    let evaluated = test_eval(input).unwrap();
+    assert_eq!(evaluated.object_type(), ObjectType::ARRAY);
+    let arr = evaluated.as_any().downcast_ref::<object::Array>().unwrap();
+    assert_eq!(arr.elements.len(), 4);
+    test_integer_object(arr.elements[3].as_ref(), 4);
+
+    let input = "rest([1, 2, 3]);";
+    let evaluated = test_eval(input).unwrap();
+    assert_eq!(evaluated.object_type(), ObjectType::ARRAY);
+    let arr = evaluated.as_any().downcast_ref::<object::Array>().unwrap();
+    assert_eq!(arr.elements.len(), 2);
+    test_integer_object(arr.elements[0].as_ref(), 2);
+    test_integer_object(arr.elements[1].as_ref(), 3);
 }

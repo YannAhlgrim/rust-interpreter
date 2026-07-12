@@ -16,12 +16,16 @@ pub trait StatementTrait: NodeTrait {
 pub enum Expression {
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
+    StringLiteral(StringLiteral),
+    Boolean(Boolean),
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
-    Boolean(Boolean),
     IfExpression(IfExpression),
     FunctionLiteral(FunctionLiteral),
     CallExpression(CallExpression),
+    ArrayLiteral(ArrayLiteral),
+    HashLiteral(HashLiteral),
+    IndexExpression(IndexExpression),
 }
 
 impl NodeTrait for Expression {
@@ -29,12 +33,16 @@ impl NodeTrait for Expression {
         match self {
             Expression::Identifier(i) => i.token_literal(),
             Expression::IntegerLiteral(i) => i.token_literal(),
+            Expression::StringLiteral(i) => i.token_literal(),
+            Expression::Boolean(i) => i.token_literal(),
             Expression::PrefixExpression(i) => i.token_literal(),
             Expression::InfixExpression(i) => i.token_literal(),
-            Expression::Boolean(i) => i.token_literal(),
             Expression::IfExpression(i) => i.token_literal(),
             Expression::FunctionLiteral(i) => i.token_literal(),
             Expression::CallExpression(i) => i.token_literal(),
+            Expression::ArrayLiteral(i) => i.token_literal(),
+            Expression::HashLiteral(i) => i.token_literal(),
+            Expression::IndexExpression(i) => i.token_literal(),
         }
     }
 
@@ -42,12 +50,16 @@ impl NodeTrait for Expression {
         match self {
             Expression::Identifier(i) => i.string(),
             Expression::IntegerLiteral(i) => i.string(),
+            Expression::StringLiteral(i) => i.string(),
+            Expression::Boolean(i) => i.string(),
             Expression::PrefixExpression(i) => i.string(),
             Expression::InfixExpression(i) => i.string(),
-            Expression::Boolean(i) => i.string(),
             Expression::IfExpression(i) => i.string(),
             Expression::FunctionLiteral(i) => i.string(),
             Expression::CallExpression(i) => i.string(),
+            Expression::ArrayLiteral(i) => i.string(),
+            Expression::HashLiteral(i) => i.string(),
+            Expression::IndexExpression(i) => i.string(),
         }
     }
 
@@ -373,6 +385,104 @@ impl NodeTrait for CallExpression {
         let args: Vec<String> = self.arguments.iter().map(|a| a.string()).collect();
         out.push_str(&args.join(", "));
         out.push_str(")");
+        out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+#[derive(Debug)]
+pub struct StringLiteral {
+    pub token: Token,
+    pub value: String,
+}
+
+impl NodeTrait for StringLiteral {
+    fn token_literal(&self) -> String {
+        String::from(&self.token.literal)
+    }
+
+    fn string(&self) -> String {
+        self.value.clone()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+pub struct ArrayLiteral {
+    pub token: Token,
+    pub elements: Vec<Expression>,
+}
+
+impl NodeTrait for ArrayLiteral {
+    fn token_literal(&self) -> String {
+        String::from(&self.token.literal)
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str("[");
+        let elements: Vec<String> = self.elements.iter().map(|e| e.string()).collect();
+        out.push_str(&elements.join(", "));
+        out.push_str("]");
+        out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+pub struct HashLiteral {
+    pub token: Token,
+    pub pairs: Vec<(Expression, Expression)>,
+}
+
+impl NodeTrait for HashLiteral {
+    fn token_literal(&self) -> String {
+        String::from(&self.token.literal)
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str("{");
+        let pairs: Vec<String> = self
+            .pairs
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k.string(), v.string()))
+            .collect();
+        out.push_str(&pairs.join(", "));
+        out.push_str("}");
+        out
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+pub struct IndexExpression {
+    pub token: Token,
+    pub left: Box<Expression>,
+    pub index: Box<Expression>,
+}
+
+impl NodeTrait for IndexExpression {
+    fn token_literal(&self) -> String {
+        String::from(&self.token.literal)
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str("(");
+        out.push_str(&self.left.string());
+        out.push_str("[");
+        out.push_str(&self.index.string());
+        out.push_str("])");
         out
     }
 

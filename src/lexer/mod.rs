@@ -12,6 +12,7 @@ pub trait LexerTraits {
     fn read_char(&mut self);
     fn next_token(&mut self) -> Token;
     fn read_identifier(&mut self) -> String;
+    fn read_string(&mut self) -> String;
     fn skip_whitespace(&mut self);
     fn read_number(&mut self) -> String;
     fn peek_char(&self) -> u8;
@@ -81,6 +82,14 @@ impl LexerTraits for Lexer {
             '>' => new_token(TokenType::Gt, lit),
             '{' => new_token(TokenType::Lbrace, lit),
             '}' => new_token(TokenType::Rbrace, lit),
+            '[' => new_token(TokenType::Lbracket, lit),
+            ']' => new_token(TokenType::Rbracket, lit),
+            ':' => new_token(TokenType::Colon, lit),
+            '"' => {
+                let s = self.read_string();
+                self.read_char();
+                return new_token_from_str(TokenType::String, s);
+            }
             _ => {
                 if c.is_alphabetic() {
                     let lit = self.read_identifier();
@@ -108,6 +117,17 @@ impl LexerTraits for Lexer {
         let res = &self.input;
         let res = &res[position..read_pos];
         String::from(res)
+    }
+
+    fn read_string(&mut self) -> String {
+        let position = self.position.unwrap() + 1;
+        self.read_char();
+        while self.ch.unwrap() != b'"' && self.ch.unwrap() != 0 {
+            self.read_char();
+        }
+        let read_pos = self.position.unwrap() as usize;
+        let position = position as usize;
+        String::from(&self.input[position..read_pos])
     }
 
     fn skip_whitespace(&mut self) {

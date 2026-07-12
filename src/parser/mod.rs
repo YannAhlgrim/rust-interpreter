@@ -51,7 +51,11 @@ pub fn new_parser(l: lexer::Lexer) -> Parser {
     p.register_prefix(TokenType::Lparen, Parser::parse_grouped_expression);
     p.register_prefix(TokenType::If, Parser::parse_if_expression);
     p.register_prefix(TokenType::Function, Parser::parse_function_literal);
+    p.register_prefix(TokenType::String, Parser::parse_string_literal);
+    p.register_prefix(TokenType::Lbracket, Parser::parse_array_literal);
+    p.register_prefix(TokenType::Lbrace, Parser::parse_hash_literal);
     p.register_infix(TokenType::Lparen, Parser::parse_call_expression);
+    p.register_infix(TokenType::Lbracket, Parser::parse_index_expression);
     p.next_token();
     p.next_token();
     p
@@ -96,6 +100,7 @@ impl Parser {
             TokenType::Plus | TokenType::Minus => Precedence::Sum,
             TokenType::Slash | TokenType::Asterisk => Precedence::Product,
             TokenType::Lparen => Precedence::Call,
+            TokenType::Lbracket => Precedence::Index,
             _ => Precedence::Lowest,
         }
     }
@@ -107,6 +112,7 @@ impl Parser {
             TokenType::Plus | TokenType::Minus => Precedence::Sum,
             TokenType::Slash | TokenType::Asterisk => Precedence::Product,
             TokenType::Lparen => Precedence::Call,
+            TokenType::Lbracket => Precedence::Index,
             _ => Precedence::Lowest,
         }
     }
@@ -304,6 +310,83 @@ impl Parser {
         }))
     }
 
+    fn parse_string_literal(&mut self) -> Option<ast::Expression> {
+        Some(ast::Expression::StringLiteral(ast::StringLiteral {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        }))
+    }
+
+    fn parse_array_literal(&mut self) -> Option<ast::Expression> {
+        let token = self.cur_token.clone();
+        let elements = self.parse_expression_list(TokenType::Rbracket)?;
+        Some(ast::Expression::ArrayLiteral(ast::ArrayLiteral {
+            token,
+            elements,
+        }))
+    }
+
+    fn parse_hash_literal(&mut self) -> Option<ast::Expression> {
+        let token = self.cur_token.clone();
+        let mut pairs = Vec::new();
+
+        while !self.peek_token_is(TokenType::Rbrace) {
+            self.next_token();
+            let key = self.parse_expression(Precedence::Lowest)?;
+            if !self.expect_peek(TokenType::Colon) {
+                return None;
+            }
+            self.next_token();
+            let value = self.parse_expression(Precedence::Lowest)?;
+            pairs.push((key, value));
+            if !self.peek_token_is(TokenType::Rbrace) && !self.expect_peek(TokenType::Comma) {
+                return None;
+            }
+        }
+
+        if !self.expect_peek(TokenType::Rbrace) {
+            return None;
+        }
+
+        Some(ast::Expression::HashLiteral(ast::HashLiteral { token, pairs }))
+    }
+
+    fn parse_expression_list(&mut self, end: TokenType) -> Option<Vec<ast::Expression>> {
+        let mut list = Vec::new();
+        if self.peek_token_is(end) {
+            self.next_token();
+            return Some(list);
+        }
+        self.next_token();
+        list.push(self.parse_expression(Precedence::Lowest)?);
+        while self.peek_token_is(TokenType::Comma) {
+            self.next_token();
+            self.next_token();
+            list.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        if !self.expect_peek(end) {
+            return None;
+        }
+        Some(list)
+    }
+
+    fn parse_index_expression(
+        &mut self,
+        left: ast::Expression,
+    ) -> Option<ast::Expression> {
+        let token = self.cur_token.clone();
+        self.next_token();
+        let index = self.parse_expression(Precedence::Lowest)?;
+        if !self.expect_peek(TokenType::Rbracket) {
+            return None;
+        }
+        Some(ast::Expression::IndexExpression(ast::IndexExpression {
+            token,
+            left: Box::new(left),
+            index: Box::new(index),
+        }))
+    }
+
     fn parse_grouped_expression(&mut self) -> Option<ast::Expression> {
         self.next_token();
         let exp = self.parse_expression(Precedence::Lowest)?;
@@ -464,4 +547,5 @@ pub enum Precedence {
     Product,
     Prefix,
     Call,
+    Index,
 }
