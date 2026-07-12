@@ -8,8 +8,10 @@ const NULL: Null = Null;
 const BOOL_TRUE: object::Boolean = object::Boolean { value: true };
 const BOOL_FALSE: object::Boolean = object::Boolean { value: false };
 
-pub fn eval_program(program: ast::Program) -> Option<Box<dyn Object>> {
-    let env = Rc::new(RefCell::new(Environment::new()));
+pub fn eval_program(
+    program: ast::Program,
+    env: Rc<RefCell<Environment>>,
+) -> Option<Box<dyn Object>> {
     let mut result: Option<Box<dyn Object>> = None;
 
     for stmt in program.statements {

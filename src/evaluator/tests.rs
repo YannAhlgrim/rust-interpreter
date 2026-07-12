@@ -1,12 +1,17 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::*;
 use crate::lexer;
+use crate::object::Environment;
 use crate::parser::new_parser;
 
 fn test_eval(input: &str) -> Option<Box<dyn Object>> {
     let lexer = lexer::new(input.to_string());
     let mut parser = new_parser(lexer);
     let program = parser.parse_program();
-    eval_program(program)
+    let env = Rc::new(RefCell::new(Environment::new()));
+    eval_program(program, env)
 }
 
 fn test_integer_object(obj: &dyn Object, expected: i64) {
